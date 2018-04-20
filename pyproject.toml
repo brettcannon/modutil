@@ -1,0 +1,19 @@
+[build-system]
+requires = ["flit"]
+build-backend = "flit.buildapi"
+
+[tool.flit.metadata]
+module = "modutil"
+author = "Brett Cannon"
+author-email = "brett@python.org"
+home-page = "https://github.com/brettcannon/modutil"
+description-file = "README.md"
+dev-requires = ["pytest"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7"
+]
+requires-python = ">=3.7"
