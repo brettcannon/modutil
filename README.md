@@ -1,2 +1,2 @@
 # modutil
-Package for with Python modules
+A library for working with Python modules.
