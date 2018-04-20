@@ -1,9 +1,8 @@
-# modutil
 A library for working with Python modules.
 
-## Contents
+# Module Contents
 
-### `lazy_import(importer_name, to_import)`
+## `lazy_import(importer_name, to_import)`
 Returns the importing module and a callable for lazy importing.
 
 The module named by `importer_name` represents the module performing the
