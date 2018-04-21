@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/brettcannon/modutil.svg?branch=master)](https://travis-ci.org/brettcannon/modutil)
+
 A library for working with Python modules.
 
 # Module Contents
