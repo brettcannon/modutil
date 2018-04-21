@@ -1,13 +1,15 @@
+# `modutil`
+
 [![Build Status](https://travis-ci.org/brettcannon/modutil.svg?branch=master)](https://travis-ci.org/brettcannon/modutil)
 
 A library for working with Python modules.
 
-# Module Contents
+## Module Contents
 
-## `COMMON_MODULE_ATTRS`
+### `COMMON_MODULE_ATTRS`
 A container of attribute names which all modules have.
 
-## `lazy___all__(importer_name)`
+### `lazy___all__(importer_name)`
 Returns a callable which will lazily create `__all__` for `importer_name`.
 
 After being set as the `__getattr__` function for `importer_name`, the first
@@ -24,7 +26,7 @@ them to all, ignoring:
 `__all__` will be set after its first access and thus will not be dynamically
 updated if future attributes are added to the module.
 
-## `lazy_import(importer_name, to_import)`
+### `lazy_import(importer_name, to_import)`
 Returns the importing module and a callable for lazy importing.
 
 The module named by `importer_name` represents the module performing the
@@ -52,11 +54,11 @@ def func():
     return mod.i_abc.answer == 42
 ```
 
-## `create_AttributeError(module_name, attribute)`
+### `create_AttributeError(module_name, attribute)`
 Create an instance of `AttributeError` with its arguments set as attributes
 with the same name. A reasonable message is also provided automatically.
 
-## `chained__getattr__(importer_name, *getattrs)`
+### `chained__getattr__(importer_name, *getattrs)`
 Return a callable which calls the chain of `__getattr__` functions in sequence.
 
 If a callable raises an `AttributeError` as created by `create_AttributeError()`
