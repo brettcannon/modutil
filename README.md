@@ -49,3 +49,24 @@ mod, __getattr__ = lazy_import(__name__, {'sys', '.submodule',
 def func():
     return mod.i_abc.answer == 42
 ```
+
+## `create_AttributeError(module_name, attribute)`
+Create an instance of `AttributeError` with its arguments set as attributes
+with the same name. A reasonable message is also provided automatically.
+
+## `chained__getattr__(importer_name, *getattrs)`
+Return a callable which calls the chain of `__getattr__` functions in sequence.
+
+If a callable raises an `AttributeError` as created by `create_AttributeError()`
+then the next callable will be called. If no callable finds the attribute then
+the last `AttributeError` raised will be allowed to propagate. Any
+`AttributeError` not created by `create_AttributeError()` will immediately
+propagate to avoid masking of non-purposeful `AttributeError` exceptions.
+
+Example usage is:
+```python
+mod, import_getattr = modutil.lazy_import(__name__, {'mod'})
+all_getattr = modutil.lazy___all__(__name__)
+__getattr__ = modutil.chained___getattr__(__name__, import_getattr, all_getattr)
+del import_getattr, all_getattr
+```

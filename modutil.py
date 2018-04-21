@@ -1,5 +1,5 @@
 """Help for working with modules."""
-__version__ = "1.1.dev1"
+__version__ = "1.1.dev2"
 
 import importlib
 import importlib.machinery
@@ -7,7 +7,14 @@ import importlib.util
 import types
 
 
-def _create_AttributeError(module_name, attribute):
+def create_AttributeError(module_name, attribute):
+    """Create an instance of AttributeError with extra attributes.
+
+    Both module_name and 'attribute' will be set as attributes on the returned
+    instance of AttributeError with the same name.
+    """
+    # Changes to the attributes must be updated as appropriate in
+    # chained___getattr__() as well.
     message = f'module {module_name!r} has no attribute {attribute!r}'
     exc = AttributeError(message)
     exc.module_name = module_name
@@ -39,7 +46,7 @@ def lazy_import(importer_name, to_import):
 
     def __getattr__(name):
         if name not in import_mapping:
-            raise _create_AttributeError(importer_name, name)
+            raise create_AttributeError(importer_name, name)
         importing = import_mapping[name]
         # imortlib.import_module() implicitly sets submodules on this module as
         # appropriate for direct imports.
@@ -81,9 +88,36 @@ def lazy___all__(importer_name):
 
     def __getattr__(name):
         if name != '__all__':
-            raise _create_AttributeError(importer_name, name)
+            raise create_AttributeError(importer_name, name)
         all_ = _unique_objects(module)
         module.__all__ = all_
         return all_
+
+    return __getattr__
+
+
+def chained___getattr__(importer_name, *getattrs):
+    """Create a callable which calls each __getattr__ in sequence.
+
+    Any AttributeError exception not created by create_AttributeError() will
+    immediately be propagated. Otherwise the exception will be caught and
+    calling functions will continue. If the attribute is never found then the
+    last AttributeError raised will be what is propagated.
+    """
+    def __getattr__(name):
+        """Call each __getattr__ function in sequence."""
+        last_exc = None
+        for getattr_ in getattrs:
+            try:
+                return getattr_(name)
+            except AttributeError as exc:
+                # Checks tied to create_AttributeError().
+                if getattr(exc, 'module_name', None) == importer_name:
+                    if getattr(exc, 'attribute', None) == name:
+                        last_exc = exc
+                        continue
+                raise exc
+        else:
+            raise last_exc
 
     return __getattr__
