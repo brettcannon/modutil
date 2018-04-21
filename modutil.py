@@ -1,5 +1,5 @@
 """Help for working with modules."""
-__version__ = "1.1.0"
+__version__ = "1.1.dev1"
 
 import importlib
 import importlib.machinery
