@@ -1,7 +1,18 @@
 """Help for working with modules."""
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 import importlib
+import importlib.machinery
+import importlib.util
+import types
+
+
+def _create_AttributeError(module_name, attribute):
+    message = f'module {module_name!r} has no attribute {attribute!r}'
+    exc = AttributeError(message)
+    exc.module_name = module_name
+    exc.attribute = attribute
+    return exc
 
 
 def lazy_import(importer_name, to_import):
@@ -28,8 +39,7 @@ def lazy_import(importer_name, to_import):
 
     def __getattr__(name):
         if name not in import_mapping:
-            message = f'module {importer_name!r} has no attribute {name!r}'
-            raise AttributeError(message)
+            raise _create_AttributeError(importer_name, name)
         importing = import_mapping[name]
         # imortlib.import_module() implicitly sets submodules on this module as
         # appropriate for direct imports.
@@ -39,3 +49,41 @@ def lazy_import(importer_name, to_import):
         return imported
 
     return module, __getattr__
+
+
+COMMON_MODULE_ATTRS = frozenset(['__all__', '__builtins__', '__cached__',
+                                 '__doc__', '__file__', '__loader__',
+                                 '__name__', '__package__', '__spec__',
+                                 '__getattr__'])
+
+
+def _unique_objects(module):
+    """Create a sorted list of objects defined in the module."""
+    attrs = []
+    for name in dir(module):
+        # Ignore what every module has.
+        if name in COMMON_MODULE_ATTRS:
+            continue
+        # Leave out private attributes.
+        elif name.startswith('_') and not name.endswith('_'):
+            continue
+        # Imported modules should be skipped.
+        elif isinstance(getattr(module, name), types.ModuleType):
+            continue
+        attrs.append(name)
+    attrs.sort()
+    return attrs
+
+
+def lazy___all__(importer_name):
+    """Lazily calculate __all__ for importer_name."""
+    module = importlib.import_module(importer_name)
+
+    def __getattr__(name):
+        if name != '__all__':
+            raise _create_AttributeError(importer_name, name)
+        all_ = _unique_objects(module)
+        module.__all__ = all_
+        return all_
+
+    return __getattr__

@@ -2,6 +2,26 @@ A library for working with Python modules.
 
 # Module Contents
 
+## `COMMON_MODULE_ATTRS`
+A container of attribute names which all modules have.
+
+## `lazy___all__(importer_name)`
+Returns a callable which will lazily create `__all__` for `importer_name`.
+
+After being set as the `__getattr__` function for `importer_name`, the first
+request for `__all__` will look through the attributes of the module and add
+them to all, ignoring:
+
+- Modules (under the assumption that they were imported and not part of the
+  module's API).
+- Attributes which start with `_` but do not end in `_` (meaning that they
+  have a leading underscore and thus are private to the module).
+- Any attribute whose name is in `COMMON_MODULE_ATTRS` (under the assumption
+  that attributes common to all modules are not meant to be a part of `__all__`).
+
+`__all__` will be set after its first access and thus will not be dynamically
+updated if future attributes are added to the module.
+
 ## `lazy_import(importer_name, to_import)`
 Returns the importing module and a callable for lazy importing.
 
