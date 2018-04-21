@@ -60,11 +60,8 @@ def test_module_not_reimported(lazy_module):
 
 
 def test_AttributeError(lazy_module):
-    looking_for = 'tests.test_data.A'
-    assert looking_for not in sys.modules
-    module = lazy_module.trigger_A()
     with pytest.raises(AttributeError):
-        module.is_not_there
+        lazy_module.trigger_failure()
 
 
 def test_lazy_in_package(lazy_package):

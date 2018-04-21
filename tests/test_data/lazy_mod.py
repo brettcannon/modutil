@@ -12,3 +12,6 @@ def trigger_B():
 
 def trigger_C():
     return mod.still_C
+
+def trigger_failure():
+    return mod.does_not_exist
