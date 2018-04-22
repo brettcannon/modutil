@@ -6,25 +6,13 @@ A library for working with Python modules.
 
 ## Module Contents
 
-### `COMMON_MODULE_ATTRS`
+### `STANDARD_MODULE_ATTRS`
 A container of attribute names which all modules have.
 
-### `lazy___all__(importer_name)`
-Returns a callable which will lazily create `__all__` for `importer_name`.
-
-After being set as the `__getattr__` function for `importer_name`, the first
-request for `__all__` will look through the attributes of the module and add
-them to all, ignoring:
-
-- Modules (under the assumption that they were imported and not part of the
-  module's API).
-- Attributes which start with `_` but do not end in `_` (meaning that they
-  have a leading underscore and thus are private to the module).
-- Any attribute whose name is in `COMMON_MODULE_ATTRS` (under the assumption
-  that attributes common to all modules are not meant to be a part of `__all__`).
-
-`__all__` will be set after its first access and thus will not be dynamically
-updated if future attributes are added to the module.
+### `ModuleAttributeError(importer_name, attribute)`
+A subclass of `AttributeError` with the attributes `importer_name` and
+`attribute` set to the module being searched on and the attribute being search
+for, respectively.
 
 ### `lazy_import(importer_name, to_import)`
 Returns the importing module and a callable for lazy importing.
@@ -54,18 +42,50 @@ def func():
     return mod.i_abc.answer == 42
 ```
 
-### `create_AttributeError(module_name, attribute)`
-Create an instance of `AttributeError` with its arguments set as attributes
-with the same name. A reasonable message is also provided automatically.
+### filtered_attrs(module, *, modules=False, private=False, dunder=False, common=False)
+
+Return a collection of attributes on `module`.
+
+If `modules` is false then module instances are excluded. If `private` is
+false then attributes starting with, but not ending in, `_` will be
+excluded. With `dunder` set to false then attributes starting and ending
+with `_` are left out. The `common` argument controls whether attributes
+found in `STANDARD_MODULE_ATTRS` are returned.
+
+
+### calc___all__(module_name, **kwargs)
+
+Return a sorted list of defined attributes on `module_name`.
+
+All values specified in `**kwargs` are directly passed to `filtered_attrs()`.
+
+Since the calculation of what attributes should be included is done eagerly, the
+function should be called as late as possible in the construction of the module
+to make sure to include all appropriate attributes. For example, the expected
+usage is:
+```python
+# __all__ is defined at the end of the module.
+
+# ... module contents ...
+
+__all__ = module.calc___all__(__name__)
+```
+
+### filtered_dir(module_name, *, additions={}, **kwargs)
+
+Return a callable appropriate for `__dir__()`.
+
+All values specified in `**kwargs` get passed directly to `filtered_attrs()`.
+The `additions` argument should be an iterable which is added to the final
+results.
 
 ### `chained__getattr__(importer_name, *getattrs)`
 Return a callable which calls the chain of `__getattr__` functions in sequence.
 
-If a callable raises an `AttributeError` as created by `create_AttributeError()`
-then the next callable will be called. If no callable finds the attribute then
-the last `AttributeError` raised will be allowed to propagate. Any
-`AttributeError` not created by `create_AttributeError()` will immediately
-propagate to avoid masking of non-purposeful `AttributeError` exceptions.
+Any raised `ModuleAttributeError` which matches `importer_name` and the
+attribute being searched for will be caught and the search will continue.
+All other exceptions will be allowed to propagate. If no callable successfully
+returns a value, `ModuleAttributeError` will be raised.
 
 Example usage is:
 ```python

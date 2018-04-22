@@ -1,5 +1,5 @@
 """Help for working with modules."""
-__version__ = "1.1.dev2"
+__version__ = "1.1.0.dev3"
 
 import importlib
 import importlib.machinery
@@ -7,19 +7,26 @@ import importlib.util
 import types
 
 
-def create_AttributeError(module_name, attribute):
-    """Create an instance of AttributeError with extra attributes.
+STANDARD_MODULE_ATTRS = frozenset(['__all__', '__builtins__', '__cached__',
+                                   '__doc__', '__file__', '__loader__',
+                                   '__name__', '__package__', '__spec__',
+                                   '__getattr__'])
 
-    Both module_name and 'attribute' will be set as attributes on the returned
-    instance of AttributeError with the same name.
+
+class ModuleAttributeError(AttributeError):
+    """An AttributeError specifically for modules.
+
+    The module_name and 'attribute' attributes are set to strings representing
+    the module the attribute was searched on and the missing attribute,
+    respectively.
+
     """
-    # Changes to the attributes must be updated as appropriate in
-    # chained___getattr__() as well.
-    message = f'module {module_name!r} has no attribute {attribute!r}'
-    exc = AttributeError(message)
-    exc.module_name = module_name
-    exc.attribute = attribute
-    return exc
+
+    def __init__(self, module_name, attribute):
+        self.module_name = module_name
+        self.attribute = attribute
+        super().__init__(f"module {module_name!r} has no attribute {attribute!r}")
+
 
 
 def lazy_import(importer_name, to_import):
@@ -46,7 +53,7 @@ def lazy_import(importer_name, to_import):
 
     def __getattr__(name):
         if name not in import_mapping:
-            raise create_AttributeError(importer_name, name)
+            raise ModuleAttributeError(importer_name, name)
         importing = import_mapping[name]
         # imortlib.import_module() implicitly sets submodules on this module as
         # appropriate for direct imports.
@@ -58,66 +65,81 @@ def lazy_import(importer_name, to_import):
     return module, __getattr__
 
 
-COMMON_MODULE_ATTRS = frozenset(['__all__', '__builtins__', '__cached__',
-                                 '__doc__', '__file__', '__loader__',
-                                 '__name__', '__package__', '__spec__',
-                                 '__getattr__'])
+def filtered_attrs(module, *, modules=False, private=False, dunder=False,
+                   common=False):
+    """Return a collection of attributes on 'module'.
 
+    If 'modules' is false then module instances are excluded. If 'private' is
+    false then attributes starting with, but not ending in, '_' will be
+    excluded. With 'dunder' set to false then attributes starting and ending
+    with '_' are left out. The 'common' argument controls whether attributes
+    found in STANDARD_MODULE_ATTRS are returned.
 
-def _unique_objects(module):
-    """Create a sorted list of objects defined in the module."""
-    attrs = []
-    for name in dir(module):
-        # Ignore what every module has.
-        if name in COMMON_MODULE_ATTRS:
+    """
+    attr_names = set()
+    for name, value in module.__dict__.items():
+        if not common and name in STANDARD_MODULE_ATTRS:
             continue
-        # Leave out private attributes.
-        elif name.startswith('_') and not name.endswith('_'):
+        if name.startswith('_'):
+            if name.endswith('_'):
+                if not dunder:
+                    continue
+            elif not private:
+                continue
+        if not modules and isinstance(value, types.ModuleType):
             continue
-        # Imported modules should be skipped.
-        elif isinstance(getattr(module, name), types.ModuleType):
-            continue
-        attrs.append(name)
-    attrs.sort()
-    return attrs
+        attr_names.add(name)
+    return frozenset(attr_names)
 
 
-def lazy___all__(importer_name):
-    """Lazily calculate __all__ for importer_name."""
-    module = importlib.import_module(importer_name)
+def calc___all__(module_name, **kwargs):
+    """Return a sorted list of defined attributes on 'module_name'.
 
-    def __getattr__(name):
-        if name != '__all__':
-            raise create_AttributeError(importer_name, name)
-        all_ = _unique_objects(module)
-        module.__all__ = all_
-        return all_
+    All values specified in **kwargs are directly passed to filtered_attrs().
 
-    return __getattr__
+    """
+    module = importlib.import_module(module_name)
+    return sorted(filtered_attrs(module, **kwargs))
+
+
+def filtered_dir(module_name, *, additions={}, **kwargs):
+    """Return a callable appropriate for __dir__().
+
+    All values specified in **kwargs get passed directly to filtered_attrs().
+    The 'additions' argument should be an iterable which is added to the final
+    results.
+
+    """
+    module = importlib.import_module(module_name)
+
+    def __dir__():
+        attr_names = set(filtered_attrs(module, **kwargs))
+        attr_names.update(additions)
+        return sorted(attr_names)
+
+    return __dir__
 
 
 def chained___getattr__(importer_name, *getattrs):
     """Create a callable which calls each __getattr__ in sequence.
 
-    Any AttributeError exception not created by create_AttributeError() will
-    immediately be propagated. Otherwise the exception will be caught and
-    calling functions will continue. If the attribute is never found then the
-    last AttributeError raised will be what is propagated.
+    Any raised ModuleAttributeError which matches importer_name and the
+    attribute being searched for will be caught and the search will continue.
+    All other exceptions will be allowed to propagate. If no callable
+    successfully returns a value, ModuleAttributeError will be raised.
+
     """
     def __getattr__(name):
         """Call each __getattr__ function in sequence."""
-        last_exc = None
         for getattr_ in getattrs:
             try:
                 return getattr_(name)
-            except AttributeError as exc:
-                # Checks tied to create_AttributeError().
-                if getattr(exc, 'module_name', None) == importer_name:
-                    if getattr(exc, 'attribute', None) == name:
-                        last_exc = exc
-                        continue
-                raise exc
+            except ModuleAttributeError as exc:
+                if exc.module_name == importer_name and exc.attribute == name:
+                    continue
+                else:
+                    raise
         else:
-            raise last_exc
+            raise ModuleAttributeError(importer_name, name)
 
     return __getattr__

@@ -1,21 +1,25 @@
-import modutil
+"""__doc__"""
 
-__getattr__ = modutil.lazy___all__(__name__)
+import sys as mod
 
-import sys
 
-_private_attr = -13
+__all__ = ['Cls', 'attr', 'func']
+
+
+_private_attr = '_private_attr'
+
+__dunder__ = '__dunder__'
 
 def _private_func():
-    pass
+    return '_private_func'
 
 class _PrivateClass:
-    pass
+    """_PrivateClass"""
 
-attr = 42
+attr = 'attr'
 
 def func():
-    pass
+    return 'func'
 
 class Cls:
-    pass
+    """Cls"""
