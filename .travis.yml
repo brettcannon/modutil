@@ -7,7 +7,7 @@ install:
   - flit install --deps all
 script:
   - python3 -X dev -m pytest tests
-  - cd docs && make make check suspicious html SPHINXOPTS="-q -W -j4"
+  - cd docs && make check suspicious html SPHINXOPTS="-q -W -j4"
 
 notifications:
   on_success: never
