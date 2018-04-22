@@ -8,6 +8,7 @@ Welcome to modutil's documentation!
 
 .. image:: https://img.shields.io/pypi/v/nine.svg
     :alt: PyPI
+    :target: https://pypi.org/project/modutil/
 
 A library for working with Python modules.
 
