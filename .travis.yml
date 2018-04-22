@@ -4,7 +4,7 @@ python:
   - "nightly"
 install:
   - pip install --upgrade flit
-  - flit install
+  - flit install --deps all
 script:
   - python3 -X dev -m pytest tests
   - cd docs && make make check suspicious html SPHINXOPTS="-q -W -j4"
