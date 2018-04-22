@@ -1,5 +1,5 @@
 """Help for working with modules."""
-__version__ = "1.1.0.dev3"
+__version__ = "2.0.0.dev3"
 
 import importlib
 import importlib.machinery
@@ -29,10 +29,10 @@ class ModuleAttributeError(AttributeError):
 
 
 
-def lazy_import(importer_name, to_import):
+def lazy_import(module_name, to_import):
     """Return the importing module and a callable for lazy importing.
 
-    The module named by importer_name represents the module performing the
+    The module named by module_name represents the module performing the
     import to help facilitate resolving relative imports.
 
     to_import is an iterable of the modules to be potentially imported (absolute
@@ -120,7 +120,7 @@ def filtered_dir(module_name, *, additions={}, **kwargs):
     return __dir__
 
 
-def chained___getattr__(importer_name, *getattrs):
+def chained___getattr__(module_name, *getattrs):
     """Create a callable which calls each __getattr__ in sequence.
 
     Any raised ModuleAttributeError which matches importer_name and the
