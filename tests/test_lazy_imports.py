@@ -1,9 +1,9 @@
+import importlib
+import sys
+
 import pytest
 
 import modutil
-
-import importlib
-import sys
 
 
 def manage_module(name):
@@ -57,11 +57,6 @@ def test_module_not_reimported(lazy_module):
     module.answer = -13
     module = lazy_module.trigger_A()
     assert module.answer == -13
-
-
-def test_AttributeError(lazy_module):
-    with pytest.raises(AttributeError):
-        lazy_module.trigger_failure()
 
 
 def test_lazy_in_package(lazy_package):
