@@ -43,7 +43,7 @@ def lazy_import(module_name, to_import):
     module for easy reference within itself. The second item is a callable to be
     set to `__getattr__`.
     """
-    module = importlib.import_module(importer_name)
+    module = importlib.import_module(module_name)
     import_mapping = {}
     for name in to_import:
         importing, _, binding = name.partition(' as ')
@@ -53,7 +53,7 @@ def lazy_import(module_name, to_import):
 
     def __getattr__(name):
         if name not in import_mapping:
-            raise ModuleAttributeError(importer_name, name)
+            raise ModuleAttributeError(module_name, name)
         importing = import_mapping[name]
         # imortlib.import_module() implicitly sets submodules on this module as
         # appropriate for direct imports.
@@ -123,7 +123,7 @@ def filtered_dir(module_name, *, additions={}, **kwargs):
 def chained___getattr__(module_name, *getattrs):
     """Create a callable which calls each __getattr__ in sequence.
 
-    Any raised ModuleAttributeError which matches importer_name and the
+    Any raised ModuleAttributeError which matches module_name and the
     attribute being searched for will be caught and the search will continue.
     All other exceptions will be allowed to propagate. If no callable
     successfully returns a value, ModuleAttributeError will be raised.
@@ -135,11 +135,11 @@ def chained___getattr__(module_name, *getattrs):
             try:
                 return getattr_(name)
             except ModuleAttributeError as exc:
-                if exc.module_name == importer_name and exc.attribute == name:
+                if exc.module_name == module_name and exc.attribute == name:
                     continue
                 else:
                     raise
         else:
-            raise ModuleAttributeError(importer_name, name)
+            raise ModuleAttributeError(module_name, name)
 
     return __getattr__
