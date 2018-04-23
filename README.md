@@ -1,6 +1,7 @@
 # `modutil`
 
 [![Build Status](https://travis-ci.org/brettcannon/modutil.svg?branch=master)](https://travis-ci.org/brettcannon/modutil)
+[![Read the Docs](https://img.shields.io/readthedocs/modutil.svg)](https://modutil.readthedocs.io/)
 
 A library for working with Python modules. The highlights are:
 
