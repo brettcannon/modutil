@@ -5,6 +5,7 @@ python:
 install:
   - pip install --upgrade flit
   - flit install --deps all
+  - pip install --upgrade sphinx
 script:
   - python3 -X dev -m pytest tests
   - cd docs && make check suspicious html SPHINXOPTS="-q -W -j4"
